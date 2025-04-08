@@ -1,6 +1,6 @@
 from collections import UserDict
 from datetime import datetime, timedelta
-import pickle
+
 
 class Field: #
     def __init__(self, value):
