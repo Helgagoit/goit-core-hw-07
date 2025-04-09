@@ -2,7 +2,7 @@ from collections import UserDict
 from datetime import datetime, timedelta
 
 
-class Field: #
+class Field:
     def __init__(self, value):
         self.value = value
 
@@ -10,11 +10,11 @@ class Field: #
         return str(self.value)
 
 
-class Name(Field): #
+class Name(Field): 
     pass
 
 
-class Phone(Field): #
+class Phone(Field): 
     def __init__(self, number):
         self.value = self.validate_number(number)
 
@@ -28,7 +28,7 @@ class Phone(Field): #
     #    return self.value
 
 
-class Birthday(Field): #
+class Birthday(Field): 
     def __init__(self, value):
         self.value = self.validate_birthday(value)
 
@@ -40,7 +40,8 @@ class Birthday(Field): #
         except ValueError:
             raise ValueError("Invalid date format. Use DD.MM.YYYY")
         
-class Record:
+        
+class Record: 
     def __init__(self, name):
         self.name = Name(name)
         self.phones = []
@@ -48,29 +49,29 @@ class Record:
 
 
     def add_phone(self, phone_number):
-        phones_list_str = [str(phone) for phone in self.phones]
-        if phone_number in phones_list_str:
-            raise ValueError("Phone is alredy in the list")      
-        self.phones.append(Phone(phone_number))
+        self.phones.append(Phone(phone_number)) 
+
+        
+    def edit_phone(self, old_number, new_number):
+        for phone in self.phones:
+            if phone.value == old_number:  
+                phone.value = Phone(new_number).value
+                return
+        raise ValueError("Old phone number not found")
         
     def find_phone(self, phone_number):
         for phone in self.phones:
             if phone.value == phone_number:  
                 return phone
         return None
-  
+    
     def remove_phone(self, phone_number):
-        phone = self.find_phone(phone_number)
-        if phone:
-            self.phones.remove(phone)
-        else:
-            raise ValueError("Phone number not found")
-        
-    def edit_phone(self, old_number, new_number):
-        if not self.find_phone(old_number):
-            raise ValueError("Old phone number not found")
-        self.remove_phone(old_number)
-        self.add_phone(new_number)
+        for phone in self.phones:
+            if phone.value == phone_number:  
+                self.phones.remove(phone)
+                return
+        raise ValueError("Phone number not found")
+    
 
     def __str__(self):
         return f"Contact name: {self.name.value}, phones: {'; '.join(p.value for p in self.phones)}"
@@ -82,8 +83,10 @@ class Record:
         return self.birthday.value if self.birthday else "No birthday set"
     
     def __str__(self):
-        return f"Contact name: {self.name.value}, phones: {'; '.join(str(p) for p in self.phones)}, birthday: {self.birthday}"
-
+        phones = "; ".join(p.value for p in self.phones)
+        birthday = f", birthday: {self.show_birthday()}" if self.birthday else ""
+        return f"Contact name: {self.name.value}, phones: {phones}{birthday}"
+    
 class AddressBook(UserDict):
     def add_record(self, record):
         self.data[record.name.value] = record 
@@ -143,34 +146,36 @@ def input_error(func):
 @input_error
 def add_contact(args, book):
     name, phone = args
-    book[name] = phone
-    return f"Contact '{name}' added successfully."
-
+    record = book.find(name)
+    if record:
+        record.add_phone(phone)
+    else:
+        record = Record(name)
+        record.add_phone(phone)
+        book.add_record(record)
+    return f"Contact {name} added or updated."
 
 @input_error
 def change_contact(args, book):
-    
-    name, new_phone = args
-    if name in book:
-        book[name] = new_phone 
-        return "Contact updated"
-    else:
-        return "Contact not found"
+    name, old_phone, new_phone = args
+    record = book.find(name)
+    if record:
+        record.edit_phone(old_phone, new_phone)
+        return f"Phone for {name} changed."
+    return "Contact not found."
 
 @input_error
 def show_phone(args, book):
     name = args[0]
-    return book[name]
+    record = book.find(name)
+    if record:
+        return str(record)
+    return "Contact not found."
+
     
 @input_error
 def show_all(book):
-    if book:
-        result = ""
-        for name, phone in book.items():
-            result += f"{name}: {phone}\n"
-        return result.strip() 
-    else:
-        return "No contacts found" 
+    return str(book) if book.data else "No contacts found."
 
 @input_error
 def add_birthday(args, book):
